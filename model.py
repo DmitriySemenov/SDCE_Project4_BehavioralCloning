@@ -9,11 +9,8 @@ from keras.layers.pooling import MaxPooling2D
 from keras.layers import Cropping2D
 from keras.models import load_model
 
-import os.path
 from os import path
-
-lines = []
-        
+    
 images = []
 steer_angles = []
 
@@ -58,6 +55,11 @@ with open('my_data/driving_log.csv') as csvfile:
         
 X_train = np.array(images)
 y_train = np.array(steer_angles)
+print('Training data loaded')
+
+plt.hist(steer_angles, bins = 30)
+plt.title('Steering angle distribution')
+plt.show()
 
 if path.isfile('model.h5'):
     model = load_model('model.h5')
