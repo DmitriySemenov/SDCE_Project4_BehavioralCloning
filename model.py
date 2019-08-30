@@ -7,6 +7,10 @@ from keras.layers.core import Dense, Activation, Flatten, Dropout, Lambda
 from keras.layers.convolutional import Conv2D
 from keras.layers.pooling import MaxPooling2D
 from keras.layers import Cropping2D
+from keras.models import load_model
+
+import os.path
+from os import path
 
 lines = []
         
@@ -15,6 +19,7 @@ steer_angles = []
 
 with open('my_data/driving_log.csv') as csvfile:
     reader = csv.reader(csvfile)
+    print('Loading training data')
     for line in reader:
         if (line[0] != 'center'):
             
@@ -53,21 +58,37 @@ with open('my_data/driving_log.csv') as csvfile:
         
 X_train = np.array(images)
 y_train = np.array(steer_angles)
-print(X_train[0].shape)
 
-model = Sequential()
-model.add(Lambda(lambda x: (x/255.0) - 0.5, input_shape=(160,320,3)))
-model.add(Cropping2D(cropping=((60,20), (0,0))))
-model.add(Conv2D(filters=6, kernel_size=(3, 3), activation='relu'))
-model.add(MaxPooling2D())
-model.add(Conv2D(filters=16, kernel_size=(3, 3), activation='relu'))
-model.add(MaxPooling2D())
-model.add(Flatten())
-model.add(Dense(120, activation='relu'))
-model.add(Dense(84, activation='relu'))
-model.add(Dense(1))
+if path.isfile('model.h5'):
+    model = load_model('model.h5')
+    print('Existing model loaded')
+else:
+    model = Sequential()
+    model.add(Lambda(lambda x: (x/255.0) - 0.5, input_shape=(160,320,3)))
+    model.add(Cropping2D(cropping=((60,20), (0,0))))
+    model.add(Conv2D(filters=6, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPooling2D())
+    model.add(Conv2D(filters=16, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPooling2D())
+    model.add(Flatten())
+    model.add(Dense(120, activation='relu'))
+    model.add(Dense(84, activation='relu'))
+    model.add(Dense(1))
+    model.compile(loss='mse', optimizer='adam')
+    print('New model created')
 
-model.compile(loss='mse', optimizer='adam')
-model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch = 5)
-
+history_object = model.fit(X_train, y_train, validation_split=0.2, 
+                           shuffle=True, nb_epoch = 5, verbose = 1)
 model.save('model.h5')
+
+### print the keys contained in the history object
+print(history_object.history.keys())
+
+### plot the training and validation loss for each epoch
+plt.plot(history_object.history['loss'])
+plt.plot(history_object.history['val_loss'])
+plt.title('model mean squared error loss')
+plt.ylabel('mean squared error loss')
+plt.xlabel('epoch')
+plt.legend(['training set', 'validation set'], loc='upper right')
+plt.show()
